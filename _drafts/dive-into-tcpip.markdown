@@ -48,10 +48,20 @@ categories: jekyll techs
 　　分用是封装的逆过程，当目的主机收到一个以太网数据帧时，数据就开始从协议栈中由底向上升，同时去掉每一层协议加上的报文首部。每层协议都要检查报文首部的协议标识，以确定接收数据的上层协议。这个过程称为**分用**(Demultiplexing).  
 
 ## <span id="1.4"> 1.4 __端口号__ </span> [目录](#top)  
+
+* TCP和UDP采用16bit的端口号来识别应用程序。
+* 服务器一般使用知名端口号(1-255)提供服务，如SSH使用22端口。
+* 客户端不关心自己使用的端口号，一般使用的是临时端口号(1024-5000)。
+* 可以查看系统的`/etc/services`来查看常见的端口号。
   
 # <span id="2"> 2 __协议__ </span> [目录](#top)
 
 ## <span id="2.1"> 2.1 __IP协议__ </span> [目录](#top)
+
+　　本节主要解释IP协议首部数据结构。  
+　　IP协议是TCP/IP协议族中最核心的协议，它提供__不可靠__，__无连接__的数据包传送服务。__不可靠__是它不能保证IP数据包能成功到达目的地。__无连接__是指IP并不维护关于后续数据包的状态信息。  
+　　IP协议的首部结构如下图所示：  
+![ip header][ip_header.image]
 
 ## <span id="2.2"> 2.2 __IMCP协议__ </span> [目录](#top)  
 
@@ -60,3 +70,4 @@ categories: jekyll techs
 
 [tcp_ip_layer.image]: https://raw.githubusercontent.com/ljp827/ljp827.github.io/master/mePic/tcpip/tcp_ip%20layer.jpg "TCP/IP 分层"
 [tcp_ip_package.image]: https://raw.githubusercontent.com/ljp827/ljp827.github.io/master/mePic/tcpip/tcp_ip%20package.jpg "TCP/IP 封装"
+[ip_header.image]: https://raw.githubusercontent.com/ljp827/ljp827.github.io/master/mePic/tcpip/ip%20header.jpg "IP 协议首部结构"
