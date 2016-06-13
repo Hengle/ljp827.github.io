@@ -59,9 +59,47 @@ categories: jekyll techs
 ## <span id="2.1"> 2.1 __IP协议__ </span> [目录](#top)
 
 　　本节主要解释IP协议首部数据结构。  
-　　IP协议是TCP/IP协议族中最核心的协议，它提供__不可靠__，__无连接__的数据包传送服务。__不可靠__是它不能保证IP数据包能成功到达目的地。__无连接__是指IP并不维护关于后续数据包的状态信息。  
+　　IP协议是TCP/IP协议族中最核心的协议，它提供**不可靠**，**无连接**的数据包传送服务。**不可靠**是它不能保证IP数据包能成功到达目的地。**无连接**是指IP并不维护关于后续数据包的状态信息。  
 　　IP协议的首部结构如下图所示：  
 ![ip header][ip_header.image]
+
+　　使用`tcpdump`命令采集到的一个IP包如下图(改示例也输出了链路层的数据，其中红线部分是IP报文首部数据)所示：
+![ip example][ip_example.image]
+
+* **4位版本号**  
+在IPv4协议中，这个字段固定为4。在示例中，即为第一个4。
+* **4位首部长度**  
+表示首部总长度占用了多少个32bit。例子中的5表示占用5个32bit，即共`(5*32/8)=20`个字节。
+* **8位服务类型**  
+服务类型(TOS)包括一个3bit的优先权子字段(已忽略), 4bit的TOS子字段以及1bit未用位(必须置零)。4位的TOS分别代表：最小时延，最大吞吐量，最高可靠性和最小费用。实例中的`00`全部置零，表示一般服务。在输出行也有表示`tos 0x0`。
+* **16位数据总长度**  
+该长度包括首部在内的IP包总长度，实例中的`0034`表示总长度52。在输出行的表示`length 52`。  
+
+> 注意：输出行的`length 66`表示整个报文的总长度，包括链路层，网络层以及传输层各自的数据。
+
+* **16位标识**, **3bit标志**, **13位片偏移**  
+16位标志可以唯一的标志主机发送的每一份数据包。通常主机每发送一份报文，它的值就会加1，这个字段主要用来唯一的标志一个报文的所有分片。  
+3bit标志：
+	* 位0:保留，必须为0
+	* 位1:禁止分片(DF)
+	* 位2:更多分片(MF)
+实例中的`7baf`是16位标识，`4000`是3bit标志加上13bit片偏移。  
+
+* **TTL生存周期**  
+该字段标识数据包最多可以经过的最多路由器数，一旦经过一个处理它的路由器，它的值就减去1.当该字段值为0时，数据包被丢弃，并发送[ICMP协议](#2.2)报文通知源主机。示例中的`72`表示TTL，对应输出行中的`ttl 114`.  
+
+* **8位协议**  
+用来区分数据内容是使用什么协议封装的。示例中的`06`表示使用的[TCP协议](#2.4)。
+
+* **首部校验和**  
+这个16位检验和字段用于对首部查错。在每一跳，计算出的首部检验和必须与此字段进行比对，如果不一致，此报文被丢弃。值得注意的是，数据区的错误留待上层协议处理——用户数据报协议和传输控制协议都有检验和字段。  
+因为生存时间字段在每一跳都会发生变化，意味着检验和必须被重新计算。  
+
+* **32位源IP地址，32位目的IP地址**  
+示例中接下来的`7cc1 a701`表示源IP地址，对应输出行的`124.193.167.1`.  
+示例中的`0a68 1a8e`表示目的IP地址，对应输出行中的`10.104.26.142`.  
+
+> 更多IPv4的信息可以参考：[IPv4 维基百科](https://zh.wikipedia.org/wiki/IPv4)
 
 ## <span id="2.2"> 2.2 __IMCP协议__ </span> [目录](#top)  
 
@@ -71,3 +109,4 @@ categories: jekyll techs
 [tcp_ip_layer.image]: https://raw.githubusercontent.com/ljp827/ljp827.github.io/master/mePic/tcpip/tcp_ip%20layer.jpg "TCP/IP 分层"
 [tcp_ip_package.image]: https://raw.githubusercontent.com/ljp827/ljp827.github.io/master/mePic/tcpip/tcp_ip%20package.jpg "TCP/IP 封装"
 [ip_header.image]: https://raw.githubusercontent.com/ljp827/ljp827.github.io/master/mePic/tcpip/ip%20header.jpg "IP 协议首部结构"
+[ip_example.image]: https://raw.githubusercontent.com/ljp827/ljp827.github.io/master/mePic/tcpip/ip%20example.jpg "IP 协议首部数据示例"
