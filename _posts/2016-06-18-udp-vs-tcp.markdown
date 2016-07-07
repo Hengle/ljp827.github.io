@@ -2,11 +2,21 @@
 layout: post
 title: "UDP vs. TCP"
 date: 2016-06-18 22:43:03 +0800
-categories: jekyll translate game-networking
+categories: tech translate game-networking
 ---
 
 
 # <span id="top"> __目录__ </span> 
+* [简介](#introduction)
+* [TCP/IP](#tcpip)
+* [IP](#ip)
+* [UDP](#udp)
+* [TCP vs. UDP](#tcpudp)
+* [How TCP really works](#tcp-work)
+* [How TCP implements reliability](#tcpimple)
+* [Why you should nerver use TCP to network time critical data](#tcp-nerver-se)
+* [Why can't I use both UDP and TCP?](#tcp-with-udp)
+* [Conclusion](#conclusion)
 
 
 # <span id="introduction"> __简介__ </span> [目录](#top)  
@@ -91,7 +101,7 @@ UDP:
 
 开发一款FPS类型的网络动作游戏时，选择使用TCP是犯了最严重的错误。想知道为什么，你需要知道TCP在IP层之上做了什么，以至于所有事情看起来都这么简单!
 
-# <span id="tcp-work"> 1 __How TCP really works__ </span> [目录](#top)  
+# <span id="tcp-work"> __How TCP really works__ </span> [目录](#top)  
 
 TCP和UDP都建立在IP之上，但是他们完全不同。UDP行为十分像IP的行为，而TCP抽象出所有事情以至于你就想读写一个文件一样，掩盖了数据包的所有复杂性以及不稳定性。
 
