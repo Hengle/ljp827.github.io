@@ -8,10 +8,20 @@ categories: tech translate game-networking
 
 # <span id="top"> __目录__ </span> 
 * [简介](#introduction)  
+* [BSD sockets](#BSDSockets)
+* [Platform specifics](#PlatformSpecifics)
+* [Initializing the socket layer](#InitializingTheSocketLayer)
+* [Creating a socket](#CreatingASocket)
+* [Setting the socket as non-blocking](#SettingTheSocketAsNonBlocking)
+* [Sending packets](#SendingPackets)
+* [Receiving packets](#ReceivingPackets)
+* [Destroying a socket](#DestroyingASocket)
+* [Socket class](#SocketClass)
+* [Conclusion](#Conclusion)
   
 # <span id="introduction"> __简介__ </span> [目录](#top)  
 
-嗨，我是GlennFiedler，欢迎来到我的《[游戏程序员的网络须知](http://gafferongames.com/networking-for-game-programmers/)》系列的第一篇文章。
+嗨，我是GlennFiedler，欢迎来到我的《[游戏程序员的网络须知](http://gafferongames.com/networking-for-game-programmers/)》系列的第二篇文章。
 
 在[上一篇文章](http://ljp827.github.io/tech/translate/game-networking/2016/06/18/udp-vs-tcp.html)中，我们讨论了电脑间发送数据的可选方法，并且决定使用UDP代替TCP。我们选择UDP是为了我们的数据可以及时的发送，而不必因为等待数据包重发而导致数据堆积。
 
@@ -22,7 +32,7 @@ categories: tech translate game-networking
 
 在大多数现代的平台上，你都有某种基于BSD套接字(socket)提供的套接字层。
 
-BSD套接字通过使用类似"socket"、"bind"、"sendto"以及"recvfrom"的简单函数来操作。如果你愿意的话，你完全可以使用这些函数来工作，但是这样代码很难做到平台无关(platform independent)，因为每个平台的套接字有些细微的差别。
+BSD套接字通过使用类似"socket"、"bind"、"sendto"以及"recvfrom"的简单函数来控制。如果你愿意的话，你完全可以使用这些函数来工作，但是这样代码很难做到平台无关(platform independent)，因为每个平台的套接字有些细微的差别。
 
 所以，尽管一开始我会演示BSD套接字代码例子来说明基本的socket用法，但是我们以后不会这么做。相反，一旦我们了解了所有的socket基本功能，我们会把它抽象成一些类，这样就更容易写跨平台代码。
 
@@ -63,9 +73,9 @@ BSD套接字通过使用类似"socket"、"bind"、"sendto"以及"recvfrom"的简
 
 我喜欢这个诀窍，因为我超懒。当然，你也可以总是在你的工程或者makefile中指定链接这个库。
 
-# <span id="InitializingTheSocketLayer"> 1 __Initializing the socket layer__ </span> [目录](#top)  
+# <span id="InitializingTheSocketLayer"> __Initializing the socket layer__ </span> [目录](#top)  
 
-大部分类Unix系统(包括macosx)并不需要特殊的步骤来初始化sockets层，然后Windows需要一些特殊的步骤来让套接字代码工作，你必须在调用socket函数之前调用`WSAStartup`来初始化套接字层，在用完之后(通信完成)调用`WSACleanup`来关闭。
+大部分类Unix系统(包括macosx)并不需要特殊的步骤来初始化sockets层，然而Windows需要一些特殊的步骤来让套接字代码工作，你必须在调用socket函数之前调用`WSAStartup`来初始化套接字层，在用完之后(通信完成)调用`WSACleanup`来关闭。
 
 我们添加两个新函数：
 
@@ -99,7 +109,7 @@ BSD套接字通过使用类似"socket"、"bind"、"sendto"以及"recvfrom"的简
 		return false;
 	}
 
-下一步，我们绑定这个UDP套接字到一个端口号(比如30000)上。每个套接字必须绑定到一个唯一的端口上，因为当一个数据包到来时，(数据包里的)端口号用来决定这个数据包交付给哪个套接字。不要使用低于1024的端口号，因为这些端口号是为系统所保留。
+下一步，我们绑定这个UDP套接字到一个端口号(比如30000)上。每个套接字必须绑定到一个唯一的端口上，因为当一个数据包到来时，(数据包里的)端口号用来决定这个数据包交付给哪个套接字。不要使用低于1024的端口号，这些端口号是为系统所保留。
 
 特例：如果你不关心你的套接字绑定端口，你可以传递`0`作为端口号，系统会选择一个空闲的端口号给你。
 
@@ -114,7 +124,7 @@ BSD套接字通过使用类似"socket"、"bind"、"sendto"以及"recvfrom"的简
 		return false
 	}
 
-万事俱备，可以接发数据包。
+万事俱备，可以接发数据包了。
 
 但是，上边代码里神秘的`htons`调用是什么鬼？这只是一个把16位整数从本机字节序(小端或者大端)转换成网络字节序(大端字节序)。当你要把一个整形数设置到socket结构中时，转换是必须的。
 
@@ -166,6 +176,8 @@ UDP是无连接协议，所以每次发送数据包，你都需要指定目标�
 务必注意：`sendto`函数的返回值仅仅表示数据包是否从本机成功发送，它**不能**告诉你数据包是否成功被目标机器接收到。UDP没有办法确定数据包是否到达目标机器。
 
 在上边的代码里，我们传递`sockaddr_in`结构作为目标地址。那如何设置这个结构呢？
+
+比如说我们想发送到207.45.186.98:30000
 
 一开始我们的地址格式如下：
 
@@ -219,7 +231,7 @@ UDP是无连接协议，所以每次发送数据包，你都需要指定目标�
 		// process received packet
 	}
 
-队列中那些比你的接收缓存(receive buffer)大的数据包会被悄悄的丢掉。所以如果你有一个像如上代码一样的一个256字节的缓存，而别人发送给你一个300字节的数据包，那么这个数据包就会被丢到。你不会仅仅收到这个数据包的钱256个字节。
+队列中那些比你的接收缓存(receive buffer)大的数据包会被悄悄的丢掉。所以如果你有一个像如上代码一样的一个256字节的缓存，而别人发送给你一个300字节的数据包，那么这个数据包就会被丢到。你不会仅仅收到这个数据包的前256个字节。
 
 考虑到你在写自己的游戏网络协议，只要确保你的接收缓存足够大去接收你的代码可能发送的最大数据包，这在实战中没有一点问题。
 
@@ -316,3 +328,17 @@ UDP是无连接协议，所以每次发送数据包，你都需要指定目标�
 # <span id="Conclusion"> __Conclusion__ </span> [目录](#top)  
 
 现在我们有了平台独立的方式来发送和接收UDP数据包了
+
+UDP是无连接的，我想创建一个例子代码来彻底阐明观点(hammer point home)。我设置了一个[例子程序](http://netgame.googlecode.com/files/SendingAndReceivingPackets.zip)，它从一个文本文件中读取IP地址，并且每秒为这些IP地址发送一个数据包。每当这个程序收到一个数据包，它会打印出来收到数据包的来源地址以及数据包的大小。
+
+在你的本机上设置大量的节点，让其互相发送数据包，这对你来说应该十分简单：只需要多开一些这个程序的例程，并传递不同的端口号即可，具体如下：
+
+	> Node 30000
+	> Node 30001
+	> Node 30002
+	> Node 30003
+	etc...
+
+然后每个节点会尝试互相发送数据包，就像一个迷你的P2P程序。
+
+我是在MacOS上开发了这个程序，但是你应该能在任何类UNIX系统或者Windows系统上编译它，所以如果你在不同的机器上有一些兼容性补丁，**请让我知道**。
